@@ -1,0 +1,49 @@
+/*
+ * ORIGINAL-GRAMMAR.txt
+ * CS5363-E
+ * Spring 2015
+ * Amulya Battu
+ * Gabe Fernandez
+ * Shravya Gaddam
+ * David Holland
+ */
+<program> ::= PROGRAM <declarations> BEGIN <statementSequence> END
+
+<declarations> ::= VAR ident AS <type> SC <declarations>
+               | ε
+
+<type> ::= INT | BOOL
+
+<statementSequence> ::= <statement> SC <statementSequence>
+                    | ε
+
+<statement> ::= <assignment>
+            | <ifStatement>
+            | <whileStatement>
+            | <writeInt>
+
+<assignment> ::= ident ASGN <expression>
+             | ident ASGN READINT
+
+<ifStatement> ::= IF <expression> THEN <statementSequence> <elseClause> END
+
+<elseClause> ::= ELSE <statementSequence>
+             | ε
+
+<whileStatement> ::= WHILE <expression> DO <statementSequence> END
+
+<writeInt> ::= WRITEINT <expression>
+
+<expression> ::= <simpleExpression>
+             | <simpleExpression> COMPARE <expression>
+
+<simpleExpression> ::= <term> ADDITIVE <simpleExpression>
+                   | <term>
+
+<term> ::= <factor> MULTIPLICATIVE <term>
+       | <factor>
+
+<factor> ::= ident
+         | num
+         | boollit
+         | LP <expression> RP

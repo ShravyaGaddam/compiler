@@ -1,0 +1,75 @@
+/*******************
+ * GrammarTL
+ * ORIGINAL GRAMMAR WAS NOT LL(1).
+ * Refactored <assignment>, <expression>, <simpleExpression>,
+ * and <term> so 1st token can decide alternative.
+ *
+ *******************/
+
+<program> ::= PROGRAM <declarations> BEGIN <statementSequence> END
+
+
+<declarations> ::= VAR ident AS <type> SC <declarations> | ε
+
+<type> ::= INT | BOOL
+
+<statementSequence> ::= <statement> SC <statementSequence> | ε
+
+<statement> ::= <assignment>
+            | <ifStatement>
+            | <whileStatement>
+            | <writeInt>
+
+/******
+ * Refactored to become LL(1)
+ * ORIGINAL:
+ * <assignment> ::= ident ASGN <expression>
+ *            		| ident ASGN READINT
+ *
+ */
+<assignment> ::= ident ASGN <assignType>          
+<assignType> ::= READINT | <expression>
+
+<ifStatement> ::= IF <expression> THEN <statementSequence> <elseClause> END
+
+<elseClause> ::= ELSE <statementSequence> | ε
+
+<whileStatement> ::= WHILE <expression> DO <statementSequence> END
+
+<writeInt> ::= WRITEINT <expression>
+
+/******
+ * Refactored to become LL(1)
+ * ORIGINAL:
+ * <expression> ::= <simpleExpression> 
+ *					| <simpleExpression> COMPARE <expression>
+ *
+ */
+<expression> ::= <simpleExpression> <compareExpr>
+<compareExpr> ::= COMPARE <expression> | ε
+
+/******
+ * Refactored to become LL(1)
+ * ORIGINAL:
+ * <simpleExpression> ::= <term> ADDITIVE <simpleExpression>
+ *                 		  | <term>
+ *
+ */
+<simpleExpression> ::= <term> <additiveExpr>
+<additiveExpr> ::= ADDITIVE <simpleExpression> | ε
+
+/******
+ * Refactored to become LL(1)
+ * ORIGINAL:
+ * <term> ::= <factor> MULTIPLICATIVE <term>
+ *      	  | <factor>
+ *
+ */
+<term> ::= <factor> <multiplicativeExpr>
+<multiplicativeExpr> ::= MULTIPLICATIVE <term> | ε
+
+
+<factor> ::= ident
+         | num
+         | boollit
+         | LP <expression> RP

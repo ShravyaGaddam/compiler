@@ -1,0 +1,134 @@
+/*
+ * AttributedGrammar
+ * CS5363-E
+ * Spring 2015
+ * Amulya Battu
+ * Gabe Fernandez
+ * Shravya Gaddam
+ * David Holland
+ */
+//ORIGINAL GRAMMAR WAS NOT LL(1). 
+//REVIEW 1: Refactored <assignment>, <expression>, <simpleExpression>, and <term> so 1st token can decide alternative.
+//and COMPARE, ADDITIVE and MULTIPLICATIVE are left associative
+//REVIEW 2: Attributed the grammar needed to build an AST data-structure
+
+<program> ::= PROGRAM <declarations> BEGIN <statementSequence> END
+	Δ <program>.ptr = makeSubtree("program", <declaration>.ptr, <statementSequence>.ptr)
+
+//<declarations> ::= VAR ident AS <type> SC <declarations> | ε
+<declarations1> ::= VAR ident AS <type> SC <declarations2>
+	// anytime there is recursion there is an INHERITED ATTRIB
+	Δ <declaration2>.st = makeASTnode("declarations", leaf(ident.val), type.ptr, <declarations1>.st)
+	Δ <declaration1>.ptr = <declaration2>.ptr
+<declarations> ::=  ε
+	Δ <declaration>.ptr = <declaration>.st
+	
+	
+<type> ::= INT
+	Δ type.ptr = leaf(INT.value)
+<type> ::= BOOL
+	Δ type.ptr = leaf(BOOL.value)
+
+
+//even though there is recursion here, there is no need to store part of the AST subtree going down the recursive stack. 
+//building subtrees on the way down is needed to create left-associativity in the operators, that had right recursive 
+//production rules. So, despite this pproduction being recursive, the tree is built bottom-up and there is no INHERITED
+//ATTRIBUTES, that is not '.st' attrib, which means  statementSequence() takes no PARENT parameter
+<statementSequence> ::= <statement> SC <statementSequence> | ε
+<statementSequence1> ::= <statement> SC <statementSequence2>
+	Δ <statementSequence1>.ptr = makeASTnode("statementSequence", <statement>.ptr, <statementSequence2>.ptr
+<statementSequence> ::=  ε
+	Δ <statementSequence>.ptr = nil  //at the terminal condition, no more recursion, begin build AST going back up to the root
+
+
+//build the AST from bottom-up, no '.st' parameter in the statement() def
+<statement> ::= <assignment>
+	Δ <statement>.ptr = <assignment>.ptr
+<statement> ::= <ifStatement>
+	Δ <statement>.ptr = <ifStatement>.ptr
+<statement> ::= <whileStatement>
+	Δ <statement>.ptr = <whileStatement>.ptr
+<statement> ::= <writeInt>
+	Δ <statement>.ptr = <writeInt>.ptr
+
+
+//refactored FROM:  <assignment> ::= ident ASGN <expression> | ident ASGN READINT
+<assignment> ::= ident ASGN <assignType>
+     Δ <assignment>.ptr =  makeASTnode("assignment", leaf(ident.val), leaf(ASGN.val), <assignmentType>.ptr)  
+<assignType> ::= READINT | <expression>
+	 Δ <assignmentType>.ptr = leaf(READINT.val)
+	 Δ <assignmentType>.ptr   <expression>.ptr
+
+<ifStatement> ::= IF <expression> THEN <statementSequence> <elseClause> END
+	Δ <ifStatement>.ptr = makeASTnode("if", <expresssion>.ptr, <statementSequence.ptr>, <elseClause>.ptr)    
+
+<elseClause> ::= ELSE <statementSequence> 
+	Δ <elseClause>.ptr = makeASTnode("else", <statementSequence>.st)
+<elseClause> ::=  ε
+	Δ <elseClause>.ptr = Nil.st
+
+<whileStatement> ::= WHILE <expression> DO <statementSequence> END
+	Δ <whileStatement>.ptr = makeASTnode("while", <expression>.ptr, <statementSequence>.ptr)
+
+<writeInt> ::= WRITEINT <expression>
+	Δ <writeInt>.ptr = makeASTnode("writeInt", <expression>.ptr)
+
+
+//refactored FROM ORIGINAL:  <expression> :: = <simpleExpression>  | <simpleExpression> COMPARE <expression>
+<expression> ::= <simpleExpression> <compareExpr>
+	   //SYNTH ATTRIB
+	Δ <compareExpr>.st = <simpleExpression>.ptr
+	Δ <expression.ptr = <compareExpr>.ptr
+	// Δ  <expression>.ptr  = makeASTnode("expression", <simpleExpression>.ptr, <expression'>.ptr)
+	 	 	 	 
+<compareExpr1> ::= COMPARE <simpleExpression> <compareExpr2>
+	  //finally the INHERITED ATTRIB
+	Δ  <compareExpr2>.st = makeASTnode("compareExpr", <compareExpr1>.st, leaf(COMPARE.val), <simpleExpression>.ptr)
+	  //SYNTH ATTRIB ON THE WAY BACK TO ROOT, PASSING THE SUBTREE BACK TO THe PARENT
+   	Δ  <compareExpr1>.ptr = <compareExpr2>.ptr
+ <compareExpr> ::=  ε
+ 	Δ  <compareExpr>.ptr = <compareExpr>.st 
+ 	Δ  <compareExpr>.ptr = Nil.st
+
+
+//refactored FROM ORIGINAL: <simpleExpression> ::= <term> ADDITIVE <simpleExpression> | <term>
+<simpleExpression> ::= <term> <additiveExpr>
+	   //SYNTH ATTRIB
+	Δ <additiveExpr>.st = <term>.ptr
+	Δ <simpleExpression>.ptr = <additiveExpr>.ptr
+	 // Δ  <simpleExpression>.ptr  = makeASTnode("simpleExpression", <term>.ptr, <additiveExpr>.ptr)
+	     
+<additiveExpr1> ::= ADDITIVE <term> <additiveExpr2>
+	   //finally the INHERITED ATTRIB
+	Δ  <additiveExpr2>.st = makeASTnode("additiveExpr", <additiveExpr1>.st, leaf(ADDITIVE.val), <term>.ptr)
+	  //SYNTH ATTRIB ON THE WAY BACK TO ROOT, PASSING THE SUBTREE BACK TO THe PARENT
+   	Δ  <additiveExpr1>.ptr = <additiveExpr2>.ptr
+<additiveExpr> ::=  ε
+ 	Δ  <additiveExpr>.ptr = <additiveExpr>.st
+
+
+
+//refactored FROM ORIGINAL: <term> ::= <factor> MULTIPLICATIVE <term>  | <factor>
+<term> ::= <factor> <multiplicativeExpr>
+	Δ <multiplicativeExpr>.st = <factor>.ptr
+	Δ <term>.ptr = <multiplicativeExpr>.ptr
+   // Δ <term>.st = makeASTnode("factor", <factor>.leafPtr, <multiplicativeExpr>.st)
+    
+<multiplicativeExpr1> ::= MULTIPLICATIVE <factor> <multiplicativeExpr2>
+	  //finally the INHERITED ATTRIB
+	Δ  <multiplicativeExpr2>.st = makeASTnode("multiplicativeExpr", leaf(MULTIPLICATIVE.val), <factor>.ptr, <multiplicativeExpr1>.st  )
+	  //SYNTH ATTRIB ON THE WAY BACK TO ROOT, PASSING THE SUBTREE BACK TO THE PARENT
+   	Δ  <multiplicativeExpr1>.ptr = <multiplicativeExpr2>.ptr
+<multiplicativeExpr> ::=  ε
+ 	Δ  <multiplicativeExpr>.ptr = <multiplicativeExpr>.st      
+
+
+// attributed  <factor> production rule
+<factor> ::= ident
+	Δ <factor>.ptr = leaf(ident.val)
+<factor> ::= num
+	Δ <factor>.ptr = leaf(num.val)
+<factor> ::= boollit
+	Δ <factor>.ptr = leaf(boollit.val)
+<factor> ::= LP <expression> RP
+	Δ <factor>.ptr = <expression>.ptr

@@ -1,0 +1,49 @@
+// This tree grammar defines AST nodes their production rules and their
+// relation to other AST nodes in an AST tree. The AST
+// nodes are created during the parse phase. The relationships between
+// AST nodes is defined by production rules listed in the tree grammar below.
+// This grammar may be attributed to define actions that take place for each 
+// type of AST node during a post-order traversal of the entire AST tree. 
+
+program -> declsList stmtList
+
+//declarations
+declsList -> decl declsList
+decl -> ident type
+declsListEmpty -> ε
+
+//type
+int : type -> INT     
+bool : type -> boolean
+
+//statementList
+stmtList -> stmt stmtList
+stmtListEmpty -> ε
+
+//statement
+if : stmt -> expr thenStmts elseClause
+elseClause: stmt -> stmtList
+elseEmpty -> ε
+while : stmt -> expr stmtList
+':=' : stmt -> ident expr
+':= READINT' : stmt -> ident expr
+'WRITEINT' : stmt -> WRITEINT expr
+
+//expressions
+'+'  :  expr -> leftExpr rightExpr
+'-'  :  expr -> leftExpr rightExpr
+'*'  :  expr -> leftExpr rightExpr
+'div':  expr -> leftExpr rightExpr
+'mod':  expr -> leftExpr rightExpr
+'='  :  expr -> leftExpr rightExpr
+'<'  :  expr -> leftExpr rightExpr
+'>'  :  expr -> leftExpr rightExpr
+'!=' :  expr -> leftExpr rightExpr
+'<=' :  expr -> leftExpr rightExpr
+'>=  :  expr -> leftExpr rightExpr
+
+//leaf nodes
+num : expr -> ε
+boollit : expr -> ε
+ident : expr -> ε
+ 
